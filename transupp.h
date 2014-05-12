@@ -38,14 +38,14 @@
  */
 
 typedef enum {
-        JXFORM_NONE,            /* no transformation */
-        JXFORM_FLIP_H,          /* horizontal flip */
-        JXFORM_FLIP_V,          /* vertical flip */
-        JXFORM_TRANSPOSE,       /* transpose across UL-to-LR axis */
-        JXFORM_TRANSVERSE,      /* transpose across UR-to-LL axis */
-        JXFORM_ROT_90,          /* 90-degree clockwise rotation */
-        JXFORM_ROT_180,         /* 180-degree rotation */
-        JXFORM_ROT_270          /* 270-degree clockwise (or 90 ccw) */
+  JXFORM_NONE,            /* no transformation */
+  JXFORM_FLIP_H,          /* horizontal flip */
+  JXFORM_FLIP_V,          /* vertical flip */
+  JXFORM_TRANSPOSE,       /* transpose across UL-to-LR axis */
+  JXFORM_TRANSVERSE,      /* transpose across UR-to-LL axis */
+  JXFORM_ROT_90,          /* 90-degree clockwise rotation */
+  JXFORM_ROT_180,         /* 180-degree rotation */
+  JXFORM_ROT_270          /* 270-degree clockwise (or 90 ccw) */
 } JXFORM_CODE;
 
 /*
@@ -119,9 +119,9 @@ EXTERN(void) jtransform_execute_transformation
  */
 
 typedef enum {
-        JCOPYOPT_NONE,          /* copy no optional markers */
-        JCOPYOPT_COMMENTS,      /* copy only comment (COM) markers */
-        JCOPYOPT_ALL            /* copy all optional markers */
+  JCOPYOPT_NONE,          /* copy no optional markers */
+  JCOPYOPT_COMMENTS,      /* copy only comment (COM) markers */
+  JCOPYOPT_ALL            /* copy all optional markers */
 } JCOPY_OPTION;
 
 #define JCOPYOPT_DEFAULT  JCOPYOPT_COMMENTS     /* recommended default */
