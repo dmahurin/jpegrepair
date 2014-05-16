@@ -128,8 +128,8 @@ typedef enum {
 
 /* Setup decompression object to save desired markers in memory */
 EXTERN(void) jcopy_markers_setup
-        JPP((j_decompress_ptr srcinfo, JCOPY_OPTION option));
+        (j_decompress_ptr srcinfo, JCOPY_OPTION option);
 /* Copy markers saved in the given source object to the destination object */
 EXTERN(void) jcopy_markers_execute
-        JPP((j_decompress_ptr srcinfo, j_compress_ptr dstinfo,
-             JCOPY_OPTION option));
+        (j_decompress_ptr srcinfo, j_compress_ptr dstinfo,
+         JCOPY_OPTION option);
