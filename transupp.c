@@ -912,17 +912,7 @@ jcopy_markers_execute (j_decompress_ptr srcinfo, j_compress_ptr dstinfo,
         GETJOCTET(marker->data[3]) == 0x62 &&
         GETJOCTET(marker->data[4]) == 0x65)
       continue;                 /* reject duplicate Adobe */
-#ifdef NEED_FAR_POINTERS
-    /* We could use jpeg_write_marker if the data weren't FAR... */
-    {
-      unsigned int i;
-      jpeg_write_m_header(dstinfo, marker->marker, marker->data_length);
-      for (i = 0; i < marker->data_length; i++)
-        jpeg_write_m_byte(dstinfo, marker->data[i]);
-    }
-#else
     jpeg_write_marker(dstinfo, marker->marker,
                       marker->data, marker->data_length);
-#endif
   }
 }
