@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <jpeglib.h>
+#include "transupp.h"
 
 #define OP_CDELTA 1
 #define OP_COPY 2
@@ -112,6 +113,8 @@ int main (int argc, char **argv)
 
   jpeg_stdio_src(&srcinfo, infile);
 
+  jcopy_markers_setup(&srcinfo, JCOPYOPT_ALL);
+
   jpeg_read_header(&srcinfo, TRUE);
 
   coef_arrays = jpeg_read_coefficients(&srcinfo);
@@ -189,6 +192,8 @@ int main (int argc, char **argv)
   jpeg_stdio_dest(&dstinfo, outfile);
 
   jpeg_write_coefficients(&dstinfo, coef_arrays);
+
+  jcopy_markers_execute(&srcinfo, &dstinfo, JCOPYOPT_ALL);
 
   jpeg_finish_compress(&dstinfo);
   jpeg_destroy_compress(&dstinfo);
