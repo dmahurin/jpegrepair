@@ -40,10 +40,11 @@ static void transform(struct jpeg_decompress_struct *srcinfo, jvirt_barray_ptr *
       by = reverse_order ? (height_in_blocks - block_y - 1) : block_y;
       for (block_x=0; block_x-width_in_blocks; block_x++) {
         bx = reverse_order ? (width_in_blocks - block_x - 1) : block_x;
-        if(dest_h < 0) {
+        if(dest_h == 0) { // dest_w assumed to be block count
           if((by / v_samp_factor * width_in_blocks + bx ) / h_samp_factor < ( dest_row * width_in_blocks / h_samp_factor + dest_col)  ||
+             dest_w > 0 &&
              (by / v_samp_factor * width_in_blocks + bx ) / h_samp_factor > dest_w + ( dest_row * width_in_blocks / h_samp_factor + dest_col)) continue;
-        } else if(by/v_samp_factor < dest_row || by/v_samp_factor >= (dest_row + dest_h) || bx/h_samp_factor < dest_col || bx/h_samp_factor >= (dest_col + dest_w) ) continue;
+        } else if(by/v_samp_factor < dest_row || (dest_h > 0 && by/v_samp_factor >= (dest_row + dest_h)) || bx/h_samp_factor < dest_col || (dest_w > 0 && bx/h_samp_factor >= (dest_col + dest_w)) ) continue;
 
         for (i=0; i<DCTSIZE2; i++) {
           if(op == OP_CDELTA) {
@@ -121,7 +122,7 @@ int main (int argc, char **argv)
 
   jpeg_copy_critical_parameters(&srcinfo, &dstinfo);
 
-  int dest_row = 0, dest_col = 0, dest_h = -1 , dest_w = 2 << 15;
+  int dest_row = 0, dest_col = 0, dest_h = -1 , dest_w = -1;
   while(argc) {
     int op = 0, arg_count;
     if(!strcmp(*argv, "dest")) {
@@ -136,12 +137,12 @@ int main (int argc, char **argv)
 
       dest_row = atoi(*argv); argc--; argv++;
       dest_col = atoi(*argv); argc--; argv++;
-      if(argc > 1 && isdigit(argv[0][0])) {
+      if(argc > 1 && (isdigit(argv[0][0]) || argv[0][0] == '-' && isdigit(argv[0][1]))) {
         dest_h = atoi(*argv); argc--; argv++;
-        if(argc > 1 && isdigit(argv[0][0])) {
+        if(argc > 1 && isdigit(argv[0][0]) || argv[0][0] == '-' && isdigit(argv[0][1])) {
           dest_w = atoi(*argv); argc--; argv++;
-         } else { dest_w = dest_h; dest_h = -1; }
-      }
+         } else { dest_w = dest_h; dest_h = 0; }
+      } else { dest_h = 0; }
       continue;
     } else if(!strcmp(*argv, "copy")) {
       argc--; argv++;
