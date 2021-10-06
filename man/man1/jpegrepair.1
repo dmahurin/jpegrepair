@@ -1,0 +1,60 @@
+.TH "jpegrepair" 1 "06 Oct 2021" "0.20211006" "User Manual"
+
+.SH NAME
+jpegrepair
+
+.SH SYNOPSIS
+\fBjpegrepair\fR [options] infile OP ...
+
+.SH DESCRIPTION
+Repair jpeg images, by the following operations.
+ - Change color components: Y,Cb,Cr
+ - Insert blocks
+ - Delete blocks
+ - Copy relative blocks
+
+.SH OPTIONS
+.TP
+\fBoutfile\fR
+Name outfile
+.TP
+\fBcdelta\fR n N
+Luminance
+.TP
+\fBdest\fR N n
+Destination blocks at position
+.TP
+\fBinsert\fR N
+Insert N blocks
+.TP
+\fBdelete\fR N
+Delete N block
+.TP
+\fBcopy\fR dY dX
+Copy block
+
+.SH EXAMPLE
+.TP
+Reduce luminance.
+\fBjpegrepair\fR dark.jpg light.jpg cdelta 0 100
+.TP
+Fix blueish image.
+\fBjpegrepair\fR blueish.jpg fixed.jpg cdelta 1 -100
+.TP
+Insert 2 blocks at position 50:5
+\fBjpegrepair\fR before.jpg after.jpg dest 50 5 insert 2
+.TP
+Delete 1 block at position 63:54, and after that, correct luminance. Delete 1 block at position 112:0.
+\fBjpegrepair\fR corrupt.jpg fixed.jpg dest 63 54 delete 1 cdelta 0 -450 dest 112 0 delete 1
+
+.SH COPYRIGHT
+ Copyright (c) 2017, Don Mahurin
+ BSD License.
+
+.SH SEE ALSO
+ cjpeg(1),
+ djpeg(1)
+
+.SH CONTACTS
+Website:
+ \fIhttps://github.com/dmahurin/jpegrepair\fR

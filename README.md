@@ -6,9 +6,19 @@ Repair jpeg images, by the following operations.
 - Delete blocks
 - Copy relative blocks
 
+## Depends
+
+* libjpeg
+
 ## Build
 
-> gcc jpegrepair.c transupp.c -ljpeg -o jpegrepair
+> make
+
+## Usage
+
+> jpegrepair infile OP ...
+
+where OP is: `outfile` `cdelta` `dest` `insert` `delete` `copy`
 
 ## Examples
 
@@ -31,6 +41,5 @@ Delete 1 block at position 112:0
 
 ## License
 
-jpegrepair.c - See LICENSE
-
-transupp.c - See README.ijg
+* jpegrepair.c - See LICENSE
+* transupp.c - See README.ijg
