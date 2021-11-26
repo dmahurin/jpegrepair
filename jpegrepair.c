@@ -51,7 +51,7 @@ static void transform(struct jpeg_decompress_struct *srcinfo, jvirt_barray_ptr *
     }
     for (block_y=0; block_y<height_in_blocks; block_y++) {
       by = reverse_order ? (height_in_blocks - block_y - 1) : block_y;
-      for (block_x=0; block_x-width_in_blocks; block_x++) {
+      for (block_x=0; block_x<width_in_blocks; block_x++) {
         bx = reverse_order ? (width_in_blocks - block_x - 1) : block_x;
         if(dest_h == 0) { // dest_w assumed to be block count
           if((by / v_samp_factor * width_in_blocks + bx ) / h_samp_factor < ( dest_row * width_in_blocks / h_samp_factor + dest_col)  ||
