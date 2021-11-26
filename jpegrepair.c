@@ -78,7 +78,10 @@ static void transform(struct jpeg_decompress_struct *srcinfo, jvirt_barray_ptr *
                coef_buffer[by][bx][i] = coef_buffer[ny][nx][i];
              }
           } else if(op == OP_COPY) {
-             coef_buffer[by][bx][i] = coef_buffer[by + v_samp_factor * dv][bx + h_samp_factor * dh][i];
+             ny = by + v_samp_factor * dv;
+             nx = bx + h_samp_factor * dh;
+             if (ny >= 0 && nx >= 0 && ny < height_in_blocks && nx < width_in_blocks)
+               coef_buffer[by][bx][i] = coef_buffer[ny][nx][i];
           }
           if(op == OP_CDELTA) {
                coef_buffer[by][bx][i] += dc;
