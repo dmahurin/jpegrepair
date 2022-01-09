@@ -55,8 +55,8 @@ static void transform(struct jpeg_decompress_struct *srcinfo, jvirt_barray_ptr *
         bx = reverse_order ? (width_in_blocks - block_x - 1) : block_x;
         if(dest_h == 0) { // dest_w assumed to be block count
           if((by / v_samp_factor * width_in_blocks + bx ) / h_samp_factor < ( dest_row * width_in_blocks / h_samp_factor + dest_col)  ||
-             dest_w > 0 &&
-             (by / v_samp_factor * width_in_blocks + bx ) / h_samp_factor > dest_w + ( dest_row * width_in_blocks / h_samp_factor + dest_col)) continue;
+             (dest_w > 0 &&
+               (by / v_samp_factor * width_in_blocks + bx ) / h_samp_factor > dest_w + ( dest_row * width_in_blocks / h_samp_factor + dest_col))) continue;
         } else if(by/v_samp_factor < dest_row || (dest_h > 0 && by/v_samp_factor >= (dest_row + dest_h)) || bx/h_samp_factor < dest_col || (dest_w > 0 && bx/h_samp_factor >= (dest_col + dest_w)) ) continue;
 
         for (i=0; i<DCTSIZE2; i++) {
@@ -165,9 +165,9 @@ int main (int argc, char **argv)
 
       dest_row = atoi(*argv); argc--; argv++;
       dest_col = atoi(*argv); argc--; argv++;
-      if(argc > 1 && (isdigit(argv[0][0]) || argv[0][0] == '-' && isdigit(argv[0][1]))) {
+      if(argc > 1 && (isdigit(argv[0][0]) || (argv[0][0] == '-' && isdigit(argv[0][1])))) {
         dest_h = atoi(*argv); argc--; argv++;
-        if(argc > 1 && isdigit(argv[0][0]) || argv[0][0] == '-' && isdigit(argv[0][1])) {
+        if(argc > 1 && (isdigit(argv[0][0]) || (argv[0][0] == '-' && isdigit(argv[0][1])))) {
           dest_w = atoi(*argv); argc--; argv++;
          } else { dest_w = dest_h; dest_h = 0; }
       } else { dest_h = 0; }
