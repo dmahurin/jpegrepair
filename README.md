@@ -18,11 +18,11 @@ Repair jpeg images, by the following operations.
 
 > jpegrepair infile OP ...
 
-where OP is: `outfile` `cdelta` `dest` `insert` `delete` `copy`
+where OP is: `cdelta` `dest` `insert` `delete` `copy`
 
 ## Examples
 
-Reduce luminance.
+Increase luminance.
 
 > jpegrepair dark.jpg light.jpg cdelta 0 100
 
@@ -38,6 +38,10 @@ Delete 1 block at position 63:54, and after that, correct luminance.
 Delete 1 block at position 112:0
 
 > jpegrepair corrupt.jpg fixed.jpg dest 63 54 delete 1 cdelta 0 -450 dest 112 0 delete 1
+
+Copy to position 9:35 2x2 blocks from relative block 1:-20 (1 row forward, 20 columns back).
+
+> jpegprepair before.jpg after.jpg  dest 9 35 2 2 copy 1 -20
 
 ## License
 

@@ -109,9 +109,9 @@ int main (int argc, char **argv)
     fprintf(stderr, "Usage:\n");
     fprintf(stderr, "%s infile OP ...\n", argv[0]);
     fprintf(stderr, "where OP is:\n");
-    fprintf(stderr, "outfile cdelta dest insert delete copy\n");
+    fprintf(stderr, "cdelta dest insert delete copy\n");
     fprintf(stderr, "Example:\n");
-    fprintf(stderr, "Reduce luminance.\n");
+    fprintf(stderr, "Increase luminance.\n");
     fprintf(stderr, "%s dark.jpg light.jpg cdelta 0 100\n", argv[0]);
     fprintf(stderr, "Fix blueish image.\n");
     fprintf(stderr, "%s blueish.jpg fixed.jpg cdelta 1 -100\n", argv[0]);
@@ -119,6 +119,10 @@ int main (int argc, char **argv)
     fprintf(stderr, "%s before.jpg after.jpg dest 50 5 insert 2\n", argv[0]);
     fprintf(stderr, "Delete 1 block at position 63:54, and after that, correct luminance. Delete 1 block at position 112:0.\n");
     fprintf(stderr, "%s corrupt.jpg fixed.jpg dest 63 54 delete 1 cdelta 0 -450 dest 112 0 delete 1\n", argv[0]);
+    fprintf(stderr, "Copy to position 9:35 2x2 blocks from relative block 1:-20\n");
+    fprintf(stderr, "%s before.jpg after.jpg  dest 9 35 2 2 copy 1 -20\n", argv[0]);
+    fprintf(stderr, "Show block dimensions using 'dest' with no other arguments\n");
+    fprintf(stderr, "%s before.jpg after.jpg dest\n", argv[0]);
     exit(1);
   }
 
