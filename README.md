@@ -37,6 +37,15 @@ module.callMain(["dark.jpg", "light.jpg", "cdelta", "0", "100"]);
 const outputJpegBytes = module.FS.readFile("light.jpg");
 ```
 
+To use the browser interface, serve the project directory after building:
+
+> python3 -m http.server 8000
+
+Then open `http://localhost:8000/`. The interface accepts a JPEG, builds a
+sequence of operations, previews the result, and provides it for download.
+Opening `index.html` directly with a `file://` URL will not work because
+browsers restrict loading WebAssembly modules that way.
+
 The libjpeg-turbo version and download URL can be overridden when needed:
 
 > make wasm LIBJPEG_TURBO_VERSION=3.1.1 LIBJPEG_TURBO_URL=file:///path/to/libjpeg-turbo.tar.gz

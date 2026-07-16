@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JPEG Repair</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17201f;
+      --muted: #65706e;
+      --paper: #f5f3ed;
+      --panel: #fffefa;
+      --line: #d8d8d0;
+      --accent: #0d7165;
+      --accent-dark: #08564d;
+      --danger: #a13b32;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 10% 0%, #d9ebe5 0, transparent 32rem),
+        var(--paper);
+      color: var(--ink);
+      font: 16px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 48px 0 64px;
+    }
+
+    header { margin-bottom: 30px; }
+    h1 { margin: 0 0 6px; font-size: clamp(2rem, 5vw, 3.5rem); letter-spacing: -.05em; }
+    h2 { margin: 0; font-size: 1.05rem; }
+    p { margin: 0; color: var(--muted); }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: color-mix(in srgb, var(--panel) 94%, transparent);
+      box-shadow: 0 14px 40px rgb(24 45 41 / 7%);
+    }
+
+    .panel-heading, .operation-heading, .actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .drop-zone {
+      display: grid;
+      place-items: center;
+      min-height: 160px;
+      margin-top: 16px;
+      padding: 24px;
+      border: 2px dashed #aab8b4;
+      border-radius: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+
+    .drop-zone:hover, .drop-zone.dragging { border-color: var(--accent); background: #edf7f3; }
+    .drop-zone strong { display: block; margin-bottom: 4px; }
+    input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+
+    .operations { display: grid; gap: 10px; margin: 16px 0; }
+    .empty { padding: 18px; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); text-align: center; }
+
+    .operation {
+      display: grid;
+      grid-template-columns: auto minmax(120px, .8fr) repeat(4, minmax(62px, 1fr)) auto;
+      gap: 8px;
+      align-items: end;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
+    }
+
+    .handle { align-self: center; color: #98a09e; font-size: 1.25rem; }
+    label { display: grid; gap: 4px; color: var(--muted); font-size: .75rem; }
+    select, input[type="number"] {
+      width: 100%;
+      min-width: 0;
+      padding: 8px 9px;
+      border: 1px solid #c8cecb;
+      border-radius: 7px;
+      background: white;
+      color: var(--ink);
+      font: inherit;
+    }
+
+    button, .download {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 8px 14px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--accent);
+      color: white;
+      font: 600 .9rem/1 inherit;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    button:hover, .download:hover { background: var(--accent-dark); }
+    button:disabled { cursor: not-allowed; opacity: .5; }
+    .secondary { border: 1px solid var(--line); background: white; color: var(--ink); }
+    .secondary:hover { background: #f0f2ef; }
+    .remove { min-width: 40px; padding: 8px; background: transparent; color: var(--danger); font-size: 1.15rem; }
+    .remove:hover { background: #fcefeb; }
+
+    .preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+    figure { margin: 0; }
+    figcaption { margin-bottom: 7px; color: var(--muted); font-size: .8rem; }
+    .preview {
+      display: grid;
+      place-items: center;
+      min-height: 220px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background:
+        linear-gradient(45deg, #e9e9e5 25%, transparent 25%),
+        linear-gradient(-45deg, #e9e9e5 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #e9e9e5 75%),
+        linear-gradient(-45deg, transparent 75%, #e9e9e5 75%) #f8f8f5;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+      background-size: 16px 16px;
+    }
+
+    .preview img { display: block; max-width: 100%; max-height: 420px; }
+    .placeholder { padding: 20px; color: var(--muted); text-align: center; }
+    .status { min-height: 1.5em; margin-top: 14px; font-size: .9rem; }
+    .status.error { color: var(--danger); }
+
+    @media (max-width: 820px) {
+      .workspace { grid-template-columns: 1fr; }
+      .operation { grid-template-columns: auto 1fr 1fr auto; }
+      .operation label:nth-of-type(n+4) { grid-column: span 1; }
+    }
+
+    @media (max-width: 540px) {
+      main { width: min(100% - 20px, 1120px); padding-top: 28px; }
+      .panel { padding: 16px; }
+      .preview-grid { grid-template-columns: 1fr; }
+      .operation { grid-template-columns: auto 1fr auto; }
+      .operation label { grid-column: 2; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>JPEG Repair</h1>
+      <p>Edit JPEG coefficient blocks locally in your browser. Your image never leaves this page.</p>
+    </header>
+
+    <div class="workspace">
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Input image</h2>
+            <p id="file-details">Choose a JPEG to begin.</p>
+          </div>
+        </div>
+
+        <label class="drop-zone" id="drop-zone" for="image-input">
+          <span><strong>Select or drop a JPEG</strong>Only JPEG files are accepted</span>
+        </label>
+        <input id="image-input" type="file" accept="image/jpeg,.jpg,.jpeg">
+
+        <div class="preview-grid">
+          <figure>
+            <figcaption>Original</figcaption>
+            <div class="preview" id="input-preview"><span class="placeholder">No image selected</span></div>
+          </figure>
+          <figure>
+            <figcaption>Result</figcaption>
+            <div class="preview" id="output-preview"><span class="placeholder">Run operations to preview</span></div>
+          </figure>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="operation-heading">
+          <div>
+            <h2>Operations</h2>
+            <p>Applied from top to bottom.</p>
+          </div>
+          <button class="secondary" id="add-operation" type="button">+ Add</button>
+        </div>
+
+        <div class="operations" id="operations"></div>
+
+        <div class="actions">
+          <button id="run" type="button" disabled>Run repairs</button>
+          <a class="download" id="download" hidden>Download JPEG</a>
+        </div>
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+      </section>
+    </div>
+  </main>
+
+  <template id="operation-template">
+    <div class="operation">
+      <span class="handle" aria-hidden="true">≡</span>
+      <label>Operation
+        <select class="operation-type">
+          <option value="cdelta">Color delta</option>
+          <option value="dest">Set destination</option>
+          <option value="insert">Insert blocks</option>
+          <option value="delete">Delete blocks</option>
+          <option value="copy">Copy blocks</option>
+        </select>
+      </label>
+      <label class="argument"><span></span><input type="number"></label>
+      <label class="argument"><span></span><input type="number"></label>
+      <label class="argument"><span></span><input type="number"></label>
+      <label class="argument"><span></span><input type="number"></label>
+      <button class="remove" type="button" title="Remove operation" aria-label="Remove operation">×</button>
+    </div>
+  </template>
+
+  <script type="module">
+    import createJpegRepairModule from "./dist/wasm/jpegrepair.js";
+
+    const definitions = {
+      cdelta: [["Component", 0], ["Delta", 0]],
+      dest: [["Block Y", 0], ["Block X", 0], ["Height", ""], ["Width", ""]],
+      insert: [["Count", 1]],
+      delete: [["Count", 1]],
+      copy: [["Relative Y", 0], ["Relative X", 0]]
+    };
+
+    const input = document.querySelector("#image-input");
+    const dropZone = document.querySelector("#drop-zone");
+    const operations = document.querySelector("#operations");
+    const template = document.querySelector("#operation-template");
+    const runButton = document.querySelector("#run");
+    const download = document.querySelector("#download");
+    const status = document.querySelector("#status");
+    const inputPreview = document.querySelector("#input-preview");
+    const outputPreview = document.querySelector("#output-preview");
+    const fileDetails = document.querySelector("#file-details");
+    let selectedFile;
+    let inputUrl;
+    let outputUrl;
+
+    function setStatus(message, error = false) {
+      status.textContent = message;
+      status.classList.toggle("error", error);
+    }
+
+    function setPreview(container, url, alt) {
+      container.replaceChildren();
+      const image = new Image();
+      image.src = url;
+      image.alt = alt;
+      container.append(image);
+    }
+
+    function updateRunState() {
+      runButton.disabled = !selectedFile || !operations.children.length;
+    }
+
+    function configureOperation(row, type) {
+      const args = definitions[type];
+      row.querySelectorAll(".argument").forEach((label, index) => {
+        const definition = args[index];
+        label.hidden = !definition;
+        if (!definition) return;
+        label.querySelector("span").textContent = definition[0];
+        const field = label.querySelector("input");
+        field.value = definition[1];
+        field.required = definition[1] !== "";
+      });
+    }
+
+    function addOperation(type = "cdelta") {
+      operations.querySelector(".empty")?.remove();
+      const row = template.content.firstElementChild.cloneNode(true);
+      const select = row.querySelector(".operation-type");
+      select.value = type;
+      select.addEventListener("change", () => configureOperation(row, select.value));
+      row.querySelector(".remove").addEventListener("click", () => {
+        row.remove();
+        showEmptyOperations();
+        updateRunState();
+      });
+      configureOperation(row, type);
+      operations.append(row);
+      updateRunState();
+    }
+
+    function showEmptyOperations() {
+      if (operations.children.length) return;
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = "Add at least one operation.";
+      operations.append(empty);
+    }
+
+    function operationArguments() {
+      const result = [];
+      for (const row of operations.querySelectorAll(".operation")) {
+        const type = row.querySelector(".operation-type").value;
+        result.push(type);
+        for (const field of [...row.querySelectorAll(".argument:not([hidden]) input")]) {
+          if (field.value === "") {
+            if (type === "dest") continue;
+            throw new Error(`Enter a value for ${field.closest("label").innerText.trim()}.`);
+          }
+          result.push(field.value);
+        }
+      }
+      return result;
+    }
+
+    function selectFile(file) {
+      if (!file || !/^image\/jpeg$/i.test(file.type) && !/\.jpe?g$/i.test(file.name)) {
+        setStatus("Please select a JPEG file.", true);
+        return;
+      }
+      selectedFile = file;
+      if (inputUrl) URL.revokeObjectURL(inputUrl);
+      inputUrl = URL.createObjectURL(file);
+      setPreview(inputPreview, inputUrl, "Selected JPEG");
+      fileDetails.textContent = `${file.name} · ${(file.size / 1024).toFixed(1)} KB`;
+      setStatus("");
+      updateRunState();
+    }
+
+    input.addEventListener("change", () => selectFile(input.files[0]));
+    dropZone.addEventListener("dragover", event => {
+      event.preventDefault();
+      dropZone.classList.add("dragging");
+    });
+    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragging"));
+    dropZone.addEventListener("drop", event => {
+      event.preventDefault();
+      dropZone.classList.remove("dragging");
+      selectFile(event.dataTransfer.files[0]);
+    });
+
+    document.querySelector("#add-operation").addEventListener("click", () => addOperation());
+
+    runButton.addEventListener("click", async () => {
+      runButton.disabled = true;
+      download.hidden = true;
+      setStatus("Loading JPEG repair engine…");
+
+      try {
+        const args = operationArguments();
+        const stderr = [];
+        const module = await createJpegRepairModule({
+          printErr: line => stderr.push(line)
+        });
+        const inputName = "input.jpg";
+        const outputName = "output.jpg";
+        module.FS.writeFile(inputName, new Uint8Array(await selectedFile.arrayBuffer()));
+        setStatus("Applying operations…");
+        const exitCode = module.callMain([inputName, outputName, ...args]);
+        if (exitCode !== 0) throw new Error(stderr.join("\n") || `jpegrepair exited with status ${exitCode}.`);
+
+        const bytes = module.FS.readFile(outputName);
+        const blob = new Blob([bytes], { type: "image/jpeg" });
+        if (outputUrl) URL.revokeObjectURL(outputUrl);
+        outputUrl = URL.createObjectURL(blob);
+        setPreview(outputPreview, outputUrl, "Repaired JPEG");
+        download.href = outputUrl;
+        download.download = `${selectedFile.name.replace(/\.jpe?g$/i, "")}-repaired.jpg`;
+        download.hidden = false;
+        setStatus(`Done · ${(blob.size / 1024).toFixed(1)} KB`);
+      } catch (error) {
+        console.error(error);
+        setStatus(error.message || String(error), true);
+      } finally {
+        updateRunState();
+      }
+    });
+
+    addOperation();
+  </script>
+</body>
+</html>
