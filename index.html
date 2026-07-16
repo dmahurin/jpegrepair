@@ -510,6 +510,9 @@
       operations.append(row);
       updateRunState();
       updateCommand();
+      requestAnimationFrame(() => {
+        row.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "end" });
+      });
     }
 
     function showEmptyOperations() {
