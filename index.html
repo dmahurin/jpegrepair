@@ -104,13 +104,11 @@
 
     .operation {
       display: grid;
-      grid-template-columns: minmax(150px, 1.3fr) repeat(4, minmax(86px, 1fr)) auto;
+      grid-template-columns: 170px repeat(var(--argument-count, 2), 100px) 40px;
       gap: 8px;
       align-items: end;
       flex: 0 0 auto;
       width: max-content;
-      min-width: 410px;
-      max-width: 720px;
       padding: 12px;
       border: 1px solid var(--line);
       border-radius: 10px;
@@ -266,7 +264,7 @@
         margin-inline: -16px;
         padding-inline: 16px;
       }
-      .operation { min-width: min(410px, calc(100vw - 42px)); }
+      .operation { max-width: calc(100vw - 42px); }
     }
   </style>
 </head>
@@ -404,6 +402,7 @@
 
     function configureOperation(row, type) {
       const args = definitions[type];
+      row.style.setProperty("--argument-count", args.length);
       row.querySelectorAll(".argument").forEach((label, index) => {
         const definition = args[index];
         label.hidden = !definition;
