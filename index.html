@@ -15,6 +15,14 @@
       --accent: #0d7165;
       --accent-dark: #08564d;
       --danger: #a13b32;
+      --control: #ffffff;
+      --control-hover: #f0f2ef;
+      --drop-hover: #edf7f3;
+      --remove-hover: #fcefeb;
+      --check-light: #e9e9e5;
+      --check-base: #f8f8f5;
+      --code-bg: #202725;
+      --code-ink: #edf5f1;
     }
 
     * { box-sizing: border-box; }
@@ -71,12 +79,12 @@
       padding: 8px 14px;
       border: 1px solid var(--line);
       border-radius: 8px;
-      background: white;
+      background: var(--control);
       cursor: pointer;
       transition: border-color .15s, background .15s;
     }
 
-    .drop-zone:hover, .drop-zone.dragging { border-color: var(--accent); background: #edf7f3; }
+    .drop-zone:hover, .drop-zone.dragging { border-color: var(--accent); background: var(--drop-hover); }
     .drop-zone strong { color: var(--accent); }
     input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; }
 
@@ -106,19 +114,20 @@
       padding: 12px;
       border: 1px solid var(--line);
       border-radius: 10px;
-      background: white;
+      background: var(--control);
       scroll-snap-align: start;
     }
 
     .handle { display: none; }
+    [hidden] { display: none !important; }
     label { display: grid; gap: 4px; color: var(--muted); font-size: .75rem; }
     select, input[type="number"] {
       width: 100%;
       min-width: 0;
       padding: 8px 9px;
-      border: 1px solid #c8cecb;
+      border: 1px solid var(--line);
       border-radius: 7px;
-      background: white;
+      background: var(--control);
       color: var(--ink);
       font: inherit;
     }
@@ -140,10 +149,10 @@
 
     button:hover, .download:hover { background: var(--accent-dark); }
     button:disabled { cursor: not-allowed; opacity: .5; }
-    .secondary { border: 1px solid var(--line); background: white; color: var(--ink); }
-    .secondary:hover { background: #f0f2ef; }
+    .secondary { border: 1px solid var(--line); background: var(--control); color: var(--ink); }
+    .secondary:hover { background: var(--control-hover); }
     .remove { min-width: 40px; padding: 8px; background: transparent; color: var(--danger); font-size: 1.15rem; }
-    .remove:hover { background: #fcefeb; }
+    .remove:hover { background: var(--remove-hover); }
 
     figure { margin: 0; }
     .preview {
@@ -155,10 +164,10 @@
       border: 1px solid var(--line);
       border-radius: 10px;
       background:
-        linear-gradient(45deg, #e9e9e5 25%, transparent 25%),
-        linear-gradient(-45deg, #e9e9e5 25%, transparent 25%),
-        linear-gradient(45deg, transparent 75%, #e9e9e5 75%),
-        linear-gradient(-45deg, transparent 75%, #e9e9e5 75%) #f8f8f5;
+        linear-gradient(45deg, var(--check-light) 25%, transparent 25%),
+        linear-gradient(-45deg, var(--check-light) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, var(--check-light) 75%),
+        linear-gradient(-45deg, transparent 75%, var(--check-light) 75%) var(--check-base);
       background-position: 0 0, 0 8px, 8px -8px, -8px 0;
       background-size: 16px 16px;
     }
@@ -206,10 +215,44 @@
       padding: 11px 13px;
       border: 1px solid var(--line);
       border-radius: 8px;
-      background: #202725;
-      color: #edf5f1;
+      background: var(--code-bg);
+      color: var(--code-ink);
       font: .88rem/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       white-space: nowrap;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --ink: #e5ece9;
+        --muted: #a2afab;
+        --paper: #101715;
+        --panel: #18211f;
+        --line: #36413e;
+        --accent: #66c9ba;
+        --accent-dark: #3ba897;
+        --danger: #ff9389;
+        --control: #202a27;
+        --control-hover: #2a3733;
+        --drop-hover: #1d3933;
+        --remove-hover: #422624;
+        --check-light: #28312f;
+        --check-base: #202826;
+        --code-bg: #0b100f;
+        --code-ink: #e4f0ec;
+      }
+
+      body {
+        background:
+          radial-gradient(circle at 10% 0%, #163a34 0, transparent 32rem),
+          var(--paper);
+      }
+
+      .panel { box-shadow: 0 14px 40px rgb(0 0 0 / 22%); }
+      button, .download { color: #071411; }
+      .secondary, .remove { color: var(--ink); }
+      .remove { color: var(--danger); }
+      .operation.active { box-shadow: 0 0 0 2px rgb(102 201 186 / 22%); }
     }
 
     @media (max-width: 540px) {
