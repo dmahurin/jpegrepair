@@ -450,6 +450,10 @@
             maxV = Math.max(maxV, sampling & 15);
           }
           return {
+            width,
+            height,
+            mcuWidth: 8 * maxH,
+            mcuHeight: 8 * maxV,
             columns: Math.ceil(width / (8 * maxH)),
             rows: Math.ceil(height / (8 * maxV))
           };
@@ -476,12 +480,22 @@
       }
       const imageRect = image.getBoundingClientRect();
       const previewRect = inputPreview.getBoundingClientRect();
-      const left = imageRect.left - previewRect.left + column / jpegGrid.columns * imageRect.width;
-      const top = imageRect.top - previewRect.top + row / jpegGrid.rows * imageRect.height;
+      const scaleX = imageRect.width / jpegGrid.width;
+      const scaleY = imageRect.height / jpegGrid.height;
+      const pixelLeft = column * jpegGrid.mcuWidth;
+      const pixelTop = row * jpegGrid.mcuHeight;
+      const pixelRight = Math.min(pixelLeft + jpegGrid.mcuWidth, jpegGrid.width);
+      const pixelBottom = Math.min(pixelTop + jpegGrid.mcuHeight, jpegGrid.height);
+      const originLeft = imageRect.left - previewRect.left - inputPreview.clientLeft;
+      const originTop = imageRect.top - previewRect.top - inputPreview.clientTop;
+      const left = Math.ceil(originLeft + pixelLeft * scaleX);
+      const top = Math.ceil(originTop + pixelTop * scaleY);
+      const right = Math.floor(originLeft + pixelRight * scaleX);
+      const bottom = Math.floor(originTop + pixelBottom * scaleY);
       blockSelection.style.left = `${left}px`;
       blockSelection.style.top = `${top}px`;
-      blockSelection.style.width = `${imageRect.width / jpegGrid.columns}px`;
-      blockSelection.style.height = `${imageRect.height / jpegGrid.rows}px`;
+      blockSelection.style.width = `${Math.max(1, right - left)}px`;
+      blockSelection.style.height = `${Math.max(1, bottom - top)}px`;
       blockSelection.style.display = "block";
     }
 
@@ -585,10 +599,10 @@
       const image = inputPreview.querySelector("img");
       if (!activeDestination || !jpegGrid || !image || event.target !== image) return;
       const rect = image.getBoundingClientRect();
-      const column = Math.min(jpegGrid.columns - 1,
-        Math.max(0, Math.floor((event.clientX - rect.left) / rect.width * jpegGrid.columns)));
-      const row = Math.min(jpegGrid.rows - 1,
-        Math.max(0, Math.floor((event.clientY - rect.top) / rect.height * jpegGrid.rows)));
+      const pixelX = (event.clientX - rect.left) / rect.width * jpegGrid.width;
+      const pixelY = (event.clientY - rect.top) / rect.height * jpegGrid.height;
+      const column = Math.min(jpegGrid.columns - 1, Math.max(0, Math.floor(pixelX / jpegGrid.mcuWidth)));
+      const row = Math.min(jpegGrid.rows - 1, Math.max(0, Math.floor(pixelY / jpegGrid.mcuHeight)));
       const fields = activeDestination.querySelectorAll(".argument input");
       fields[0].value = row;
       fields[1].value = column;
