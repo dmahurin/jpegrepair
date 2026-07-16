@@ -147,6 +147,7 @@
 
     figure { margin: 0; }
     .preview {
+      position: relative;
       display: grid;
       place-items: center;
       min-height: min(60vh, 520px);
@@ -163,6 +164,32 @@
     }
 
     .preview img { display: block; width: 100%; height: auto; }
+    #input-preview.selecting { cursor: crosshair; }
+    #input-preview.selecting::after {
+      content: "Click the image to set Block X / Y";
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      padding: 6px 9px;
+      border-radius: 6px;
+      background: rgb(23 32 31 / 82%);
+      color: white;
+      font-size: .78rem;
+      pointer-events: none;
+    }
+    .block-selection {
+      position: absolute;
+      z-index: 2;
+      display: none;
+      border: 2px solid #ffcc33;
+      background: rgb(255 204 51 / 20%);
+      box-shadow: 0 0 0 1px rgb(23 32 31 / 70%), inset 0 0 0 1px rgb(23 32 31 / 45%);
+      pointer-events: none;
+    }
+    .operation.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgb(13 113 101 / 16%);
+    }
     .placeholder { padding: 20px; color: var(--muted); text-align: center; }
     .status { min-height: 1.5em; margin-top: 14px; font-size: .9rem; }
     .status.error { color: var(--danger); }
@@ -203,7 +230,10 @@
           <input id="image-input" type="file" accept="image/jpeg,.jpg,.jpeg">
         </div>
 
-        <div class="preview" id="input-preview"><span class="placeholder">No image selected</span></div>
+        <div class="preview" id="input-preview">
+          <span class="placeholder">No image selected</span>
+          <span class="block-selection" id="block-selection" aria-hidden="true"></span>
+        </div>
       </section>
 
       <section class="panel">
@@ -275,11 +305,14 @@
     const download = document.querySelector("#download");
     const status = document.querySelector("#status");
     const inputPreview = document.querySelector("#input-preview");
+    const blockSelection = document.querySelector("#block-selection");
     const outputPreview = document.querySelector("#output-preview");
     const fileDetails = document.querySelector("#file-details");
     let selectedFile;
     let inputUrl;
     let outputUrl;
+    let jpegGrid;
+    let activeDestination;
 
     function setStatus(message, error = false) {
       status.textContent = message;
@@ -292,6 +325,10 @@
       image.src = url;
       image.alt = alt;
       container.append(image);
+      if (container === inputPreview) {
+        container.append(blockSelection);
+        image.addEventListener("load", updateBlockSelection);
+      }
     }
 
     function updateRunState() {
@@ -309,6 +346,77 @@
         field.value = definition[1];
         field.required = definition[1] !== "";
       });
+      if (type === "dest") {
+        activateDestination(row);
+      } else if (row === activeDestination) {
+        activateDestination(null);
+      }
+    }
+
+    function activateDestination(row) {
+      activeDestination?.classList.remove("active");
+      activeDestination = row?.querySelector(".operation-type").value === "dest" ? row : null;
+      activeDestination?.classList.add("active");
+      inputPreview.classList.toggle("selecting", Boolean(activeDestination && selectedFile));
+      updateBlockSelection();
+    }
+
+    function readJpegGrid(bytes) {
+      const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      const sofMarkers = new Set([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf]);
+      let offset = 2;
+      while (offset + 8 < bytes.length) {
+        if (bytes[offset++] !== 0xff) continue;
+        while (bytes[offset] === 0xff) offset++;
+        const marker = bytes[offset++];
+        if (marker === 0xd8 || marker === 0xd9 || marker >= 0xd0 && marker <= 0xd7) continue;
+        if (offset + 2 > bytes.length) break;
+        const length = view.getUint16(offset);
+        if (sofMarkers.has(marker)) {
+          const height = view.getUint16(offset + 3);
+          const width = view.getUint16(offset + 5);
+          const components = bytes[offset + 7];
+          let maxH = 1;
+          let maxV = 1;
+          for (let index = 0; index < components; index++) {
+            const sampling = bytes[offset + 9 + index * 3];
+            maxH = Math.max(maxH, sampling >> 4);
+            maxV = Math.max(maxV, sampling & 15);
+          }
+          return {
+            columns: Math.ceil(width / (8 * maxH)),
+            rows: Math.ceil(height / (8 * maxV))
+          };
+        }
+        if (length < 2) break;
+        offset += length;
+      }
+      throw new Error("Could not read JPEG block dimensions.");
+    }
+
+    function updateBlockSelection() {
+      const image = inputPreview.querySelector("img");
+      if (!activeDestination || !jpegGrid || !image?.complete) {
+        blockSelection.style.display = "none";
+        return;
+      }
+      const fields = activeDestination.querySelectorAll(".argument input");
+      const row = Number(fields[0].value);
+      const column = Number(fields[1].value);
+      if (!Number.isInteger(row) || !Number.isInteger(column) ||
+          row < 0 || column < 0 || row >= jpegGrid.rows || column >= jpegGrid.columns) {
+        blockSelection.style.display = "none";
+        return;
+      }
+      const imageRect = image.getBoundingClientRect();
+      const previewRect = inputPreview.getBoundingClientRect();
+      const left = imageRect.left - previewRect.left + column / jpegGrid.columns * imageRect.width;
+      const top = imageRect.top - previewRect.top + row / jpegGrid.rows * imageRect.height;
+      blockSelection.style.left = `${left}px`;
+      blockSelection.style.top = `${top}px`;
+      blockSelection.style.width = `${imageRect.width / jpegGrid.columns}px`;
+      blockSelection.style.height = `${imageRect.height / jpegGrid.rows}px`;
+      blockSelection.style.display = "block";
     }
 
     function addOperation(type = "cdelta") {
@@ -317,7 +425,15 @@
       const select = row.querySelector(".operation-type");
       select.value = type;
       select.addEventListener("change", () => configureOperation(row, select.value));
-      row.querySelector(".remove").addEventListener("click", () => {
+      row.addEventListener("click", () => {
+        if (select.value === "dest") activateDestination(row);
+      });
+      row.querySelectorAll("input").forEach(field => field.addEventListener("input", () => {
+        if (row === activeDestination) updateBlockSelection();
+      }));
+      row.querySelector(".remove").addEventListener("click", event => {
+        event.stopPropagation();
+        if (row === activeDestination) activateDestination(null);
         row.remove();
         showEmptyOperations();
         updateRunState();
@@ -351,19 +467,45 @@
       return result;
     }
 
-    function selectFile(file) {
+    async function selectFile(file) {
       if (!file || !/^image\/jpeg$/i.test(file.type) && !/\.jpe?g$/i.test(file.name)) {
         setStatus("Please select a JPEG file.", true);
         return;
       }
       selectedFile = file;
+      try {
+        jpegGrid = readJpegGrid(new Uint8Array(await file.arrayBuffer()));
+      } catch (error) {
+        selectedFile = null;
+        jpegGrid = null;
+        setStatus(error.message, true);
+        updateRunState();
+        return;
+      }
       if (inputUrl) URL.revokeObjectURL(inputUrl);
       inputUrl = URL.createObjectURL(file);
       setPreview(inputPreview, inputUrl, "Selected JPEG");
       fileDetails.textContent = `${file.name} · ${(file.size / 1024).toFixed(1)} KB`;
       setStatus("");
+      inputPreview.classList.toggle("selecting", Boolean(activeDestination));
       updateRunState();
     }
+
+    inputPreview.addEventListener("click", event => {
+      const image = inputPreview.querySelector("img");
+      if (!activeDestination || !jpegGrid || !image || event.target !== image) return;
+      const rect = image.getBoundingClientRect();
+      const column = Math.min(jpegGrid.columns - 1,
+        Math.max(0, Math.floor((event.clientX - rect.left) / rect.width * jpegGrid.columns)));
+      const row = Math.min(jpegGrid.rows - 1,
+        Math.max(0, Math.floor((event.clientY - rect.top) / rect.height * jpegGrid.rows)));
+      const fields = activeDestination.querySelectorAll(".argument input");
+      fields[0].value = row;
+      fields[1].value = column;
+      updateBlockSelection();
+    });
+
+    window.addEventListener("resize", updateBlockSelection);
 
     input.addEventListener("change", () => selectFile(input.files[0]));
     dropZone.addEventListener("dragover", event => {
