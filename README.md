@@ -14,6 +14,33 @@ Repair jpeg images, by the following operations.
 
 > make
 
+### WebAssembly
+
+The WebAssembly build requires the [Emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html),
+CMake, curl, and tar. It downloads and builds a pinned static copy of
+libjpeg-turbo, so a WebAssembly libjpeg installation is not otherwise needed.
+
+> make wasm
+
+The output is `dist/wasm/jpegrepair.js` and
+`dist/wasm/jpegrepair.wasm`. The generated module works in browsers, Web
+Workers, and Node.js. It does not run `main()` automatically; put input files
+in Emscripten's virtual filesystem and invoke the existing command-line
+interface with `callMain`:
+
+```js
+import createJpegRepairModule from "./dist/wasm/jpegrepair.js";
+
+const module = await createJpegRepairModule();
+module.FS.writeFile("dark.jpg", inputJpegBytes);
+module.callMain(["dark.jpg", "light.jpg", "cdelta", "0", "100"]);
+const outputJpegBytes = module.FS.readFile("light.jpg");
+```
+
+The libjpeg-turbo version and download URL can be overridden when needed:
+
+> make wasm LIBJPEG_TURBO_VERSION=3.1.1 LIBJPEG_TURBO_URL=file:///path/to/libjpeg-turbo.tar.gz
+
 ## Usage
 
 > jpegrepair infile OP ...
