@@ -193,6 +193,24 @@
     .placeholder { padding: 20px; color: var(--muted); text-align: center; }
     .status { min-height: 1.5em; margin-top: 14px; font-size: .9rem; }
     .status.error { color: var(--danger); }
+    .command-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .command-line code {
+      flex: 1;
+      min-width: 0;
+      overflow-x: auto;
+      padding: 11px 13px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #202725;
+      color: #edf5f1;
+      font: .88rem/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: nowrap;
+    }
 
     @media (max-width: 540px) {
       main { width: calc(100% - 20px); padding-top: 28px; }
@@ -262,6 +280,10 @@
           </div>
         </div>
         <div class="preview" id="output-preview"><span class="placeholder">Run operations to preview</span></div>
+        <div class="command-line">
+          <code id="command">jpegrepair input.jpg output.jpg</code>
+          <button class="secondary" id="copy-command" type="button">Copy command</button>
+        </div>
       </section>
     </div>
   </main>
@@ -308,6 +330,8 @@
     const blockSelection = document.querySelector("#block-selection");
     const outputPreview = document.querySelector("#output-preview");
     const fileDetails = document.querySelector("#file-details");
+    const command = document.querySelector("#command");
+    const copyCommand = document.querySelector("#copy-command");
     let selectedFile;
     let inputUrl;
     let outputUrl;
@@ -437,10 +461,12 @@
         row.remove();
         showEmptyOperations();
         updateRunState();
+        updateCommand();
       });
       configureOperation(row, type);
       operations.append(row);
       updateRunState();
+      updateCommand();
     }
 
     function showEmptyOperations() {
@@ -467,6 +493,24 @@
       return result;
     }
 
+    function shellQuote(value) {
+      return /^[A-Za-z0-9_./-]+$/.test(value) ? value : `'${value.replaceAll("'", "'\\''")}'`;
+    }
+
+    function updateCommand() {
+      const inputName = selectedFile?.name || "input.jpg";
+      const outputName = selectedFile
+        ? `${selectedFile.name.replace(/\.jpe?g$/i, "")}-repaired.jpg`
+        : "output.jpg";
+      let args = [];
+      try {
+        args = operationArguments();
+      } catch {
+        // Keep the preview useful while an optional or incomplete field is being edited.
+      }
+      command.textContent = ["jpegrepair", inputName, outputName, ...args].map(shellQuote).join(" ");
+    }
+
     async function selectFile(file) {
       if (!file || !/^image\/jpeg$/i.test(file.type) && !/\.jpe?g$/i.test(file.name)) {
         setStatus("Please select a JPEG file.", true);
@@ -489,6 +533,7 @@
       setStatus("");
       inputPreview.classList.toggle("selecting", Boolean(activeDestination));
       updateRunState();
+      updateCommand();
     }
 
     inputPreview.addEventListener("click", event => {
@@ -503,6 +548,7 @@
       fields[0].value = row;
       fields[1].value = column;
       updateBlockSelection();
+      updateCommand();
     });
 
     window.addEventListener("resize", updateBlockSelection);
@@ -520,6 +566,18 @@
     });
 
     document.querySelector("#add-operation").addEventListener("click", () => addOperation());
+    operations.addEventListener("input", updateCommand);
+    operations.addEventListener("change", updateCommand);
+    copyCommand.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(command.textContent);
+        const previous = copyCommand.textContent;
+        copyCommand.textContent = "Copied";
+        setTimeout(() => copyCommand.textContent = previous, 1200);
+      } catch {
+        setStatus("Could not copy the command. Select it and copy manually.", true);
+      }
+    });
 
     runButton.addEventListener("click", async () => {
       runButton.disabled = true;
